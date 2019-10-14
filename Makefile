@@ -33,7 +33,7 @@ ARM_LD=arm-linux-ld
 MIPS_CC=mipsel-linux-gcc
 MIPS_LD=mipsel-linux-ld
 CPP=g++
-OPTS=-Wall -O3
+OPTS=-Wall -O3 -fgnu89-inline
 CPP_OPTS=-Wall
 
 export CC ARM_CC MIPS_CC
