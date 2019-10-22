@@ -20,18 +20,16 @@ OBJS_NS_CPP = $(SRC_NS_CPP:%.cc=%-ns.o)
 
 KERNEL=$(shell uname -r)
 # Change to compile against different kernel (can be overridden):
-KERNEL_DIR=/lib/modules/$(KERNEL)/build
+KERNEL_DIR=/root/flexbuild/build/rfs/rootfs_ubuntu_bionic_arm64/lib/modules/4.14.47/build
 KERNEL_INC=$(KERNEL_DIR)/include
 
 # Compiler and options:
 # ##### for RCP use: big-endian
 CC=gcc
 LD=ld
-ARM_CC=arm-linux-gcc
-ARM_CCFLAGS=-mbig-endian
-ARM_LD=arm-linux-ld
-MIPS_CC=mipsel-linux-gcc
-MIPS_LD=mipsel-linux-ld
+ARM_CC=aarch64-linux-gnu-gcc
+# ARM_CCFLAGS=-mbig-endian
+ARM_LD=aarch64-linux-gnu-ld
 CPP=g++
 OPTS=-Wall -O3 -fgnu89-inline
 CPP_OPTS=-Wall
@@ -87,8 +85,6 @@ default: aodvd kaodv
 
 arm: aodvd-arm kaodv-arm
 
-mips: aodvd-mips kaodv-mips
-
 endian.h:
 	$(CC) $(CFLAGS) -o endian endian.c
 	./endian > endian.h
@@ -98,9 +94,6 @@ $(OBJS): %.o: %.c Makefile
 
 $(OBJS_ARM): %-arm.o: %.c Makefile
 	$(ARM_CC) $(ARM_CCFLAGS) $(CFLAGS) -DARM $(ARM_INC) -c -o $@ $<
-
-$(OBJS_MIPS): %-mips.o: %.c Makefile
-	$(MIPS_CC) $(MIPS_CCFLAGS) $(CFLAGS) -DMIPS $(MIPS_INC) -c -o $@ $<
 
 $(OBJS_NS): %-ns.o: %.c Makefile
 	$(CPP) $(NS_CFLAGS) $(NS_INC) -c -o $@ $<
@@ -114,21 +107,15 @@ aodvd: $(OBJS) Makefile
 aodvd-arm: $(OBJS_ARM) Makefile
 	$(ARM_CC) $(ARM_CCFLAGS) $(CFLAGS) -DARM -o $(@:%-arm=%) $(OBJS_ARM) $(LD_OPTS)
 
-aodvd-mips: $(OBJS_MIPS) Makefile
-	$(MIPS_CC) $(MIPS_CCFLAGS) $(CFLAGS) -DMIPS -o $(@:%-mips=%) $(OBJS_MIPS) $(LD_OPTS)
-
 $(NS_TARGET): $(OBJS_NS_CPP) $(OBJS_NS) endian.h 
 	$(AR) $(AR_FLAGS) $@ $(OBJS_NS_CPP) $(OBJS_NS) > /dev/null
 
 # Kernel module:
 kaodv: 
-	$(MAKE) -C $(AODVDIR)/lnx KERNEL_DIR=$(KERNEL_DIR) KCC=$(CC) XDEFS=$(XDEFS)
+	$(MAKE) -C $(AODVDIR)/lnx KERNEL_DIR=$(KERNEL_DIR) XDEFS=$(XDEFS)
 
 kaodv-arm: 
-	$(MAKE) -C $(AODVDIR)/lnx KERNEL_DIR=$(KERNEL_DIR) KCC=$(ARM_CC) LD=$(ARM_LD) XDEFS=$(XDEFS) kaodv-arm
-
-kaodv-mips: 
-	$(MAKE) -C $(AODVDIR)/lnx KERNEL_DIR=$(KERNEL_DIR) KCC=$(MIPS_CC) LD=$(MIPS_LD) XDEFS=$(XDEFS) kaodv-mips
+	$(MAKE) -C $(AODVDIR)/lnx KERNEL_DIR=$(KERNEL_DIR) XDEFS=$(XDEFS)
 
 tags: TAGS
 TAGS: lnx/TAGS
