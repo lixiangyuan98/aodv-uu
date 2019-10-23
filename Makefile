@@ -1,38 +1,17 @@
 # Makefile
 AODVDIR=$(shell pwd)
-NS_DIR=ns-2
 
 SRC =	main.c list.c debug.c timer_queue.c aodv_socket.c aodv_hello.c \
 	aodv_neighbor.c aodv_timeout.c routing_table.c seek_list.c \
 	aodv_rreq.c aodv_rrep.c aodv_rerr.c nl.c
 
-SRC_NS = 	debug.c list.c timer_queue.c aodv_socket.c aodv_hello.c \
-		aodv_neighbor.c aodv_timeout.c routing_table.c seek_list.c \
-		aodv_rreq.c aodv_rrep.c aodv_rerr.c
-
-SRC_NS_CPP =	$(NS_DIR)/aodv-uu.cc $(NS_DIR)/packet_queue.cc $(NS_DIR)/packet_input.cc
-
-OBJS =	$(SRC:%.c=%.o)
-OBJS_ARM = $(SRC:%.c=%-arm.o)
-OBJS_MIPS = $(SRC:%.c=%-mips.o)
-OBJS_NS = $(SRC_NS:%.c=%-ns.o)
-OBJS_NS_CPP = $(SRC_NS_CPP:%.cc=%-ns.o)
-
-KERNEL=$(shell uname -r)
-# Change to compile against different kernel (can be overridden):
-KERNEL_DIR=/root/flexbuild/build/rfs/rootfs_ubuntu_bionic_arm64/lib/modules/4.14.47/build
-KERNEL_INC=$(KERNEL_DIR)/include
+OBJS = $(SRC:%.c=%.o)
 
 # Compiler and options:
 # ##### for RCP use: big-endian
-CC=gcc
-LD=ld
 ARM_CC=aarch64-linux-gnu-gcc
-# ARM_CCFLAGS=-mbig-endian
 ARM_LD=aarch64-linux-gnu-ld
-CPP=g++
 OPTS=-Wall -O3 -fgnu89-inline
-CPP_OPTS=-Wall
 
 export CC ARM_CC MIPS_CC
 
@@ -57,24 +36,6 @@ endif
 #=====================================
 ARM_INC=
 
-# NS specific configuration goes here:
-#=====================================
-NS_DEFS= # DON'T CHANGE (overridden by NS Makefile)
-
-# Set extra DEFINES here. Link layer feedback is now a runtime option.
-EXTRA_NS_DEFS=-DCONFIG_GATEWAY
-
-ifneq (,$(findstring CONFIG_GATEWAY,$(EXTRA_NS_DEFS)))
-SRC_NS:=$(SRC_NS) locality.c
-endif
-
-# Note: OPTS is overridden by NS Makefile
-NS_CFLAGS=$(OPTS) $(CPP_OPTS) $(DEBUG) $(NS_DEFS) $(EXTRA_NS_DEFS)
-
-NS_INC= # DON'T CHANGE (overridden by NS Makefile)
-
-NS_TARGET=libaodv-uu.a
-
 # Archiver and options
 AR=ar
 AR_FLAGS=rc
@@ -83,39 +44,15 @@ AR_FLAGS=rc
 
 default: aodvd kaodv
 
-arm: aodvd-arm kaodv-arm
-
-endian.h:
-	$(CC) $(CFLAGS) -o endian endian.c
-	./endian > endian.h
-
 $(OBJS): %.o: %.c Makefile
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-$(OBJS_ARM): %-arm.o: %.c Makefile
 	$(ARM_CC) $(ARM_CCFLAGS) $(CFLAGS) -DARM $(ARM_INC) -c -o $@ $<
 
-$(OBJS_NS): %-ns.o: %.c Makefile
-	$(CPP) $(NS_CFLAGS) $(NS_INC) -c -o $@ $<
-
-$(OBJS_NS_CPP): %-ns.o: %.cc Makefile
-	$(CPP) $(NS_CFLAGS) $(NS_INC) -c -o $@ $<
-
 aodvd: $(OBJS) Makefile
-	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LD_OPTS)
-
-aodvd-arm: $(OBJS_ARM) Makefile
-	$(ARM_CC) $(ARM_CCFLAGS) $(CFLAGS) -DARM -o $(@:%-arm=%) $(OBJS_ARM) $(LD_OPTS)
-
-$(NS_TARGET): $(OBJS_NS_CPP) $(OBJS_NS) endian.h 
-	$(AR) $(AR_FLAGS) $@ $(OBJS_NS_CPP) $(OBJS_NS) > /dev/null
+	$(ARM_CC) $(ARM_CCFLAGS) $(CFLAGS) -DARM -o $@ $(OBJS) $(LD_OPTS)
 
 # Kernel module:
 kaodv: 
-	$(MAKE) -C $(AODVDIR)/lnx KERNEL_DIR=$(KERNEL_DIR) XDEFS=$(XDEFS)
-
-kaodv-arm: 
-	$(MAKE) -C $(AODVDIR)/lnx KERNEL_DIR=$(KERNEL_DIR) XDEFS=$(XDEFS)
+	$(MAKE) -C $(AODVDIR)/lnx XDEFS=$(XDEFS)
 
 tags: TAGS
 TAGS: lnx/TAGS
@@ -133,29 +70,12 @@ depend:
 	@makedepend -Y./ -- $(DEFS) -- $(SRC) &>/dev/null
 	@makedepend -a -Y./ -- $(KDEFS) kaodv.c &>/dev/null
 
-install: default
-	install -s -m 755 aodvd /usr/sbin/aodvd
-	@if [ ! -d /lib/modules/$(KERNEL)/aodv ]; then \
-		mkdir /lib/modules/$(KERNEL)/aodv; \
-	fi
-
-	@echo "Installing kernel module in /lib/modules/$(KERNEL)/aodv/";
-	@if [ -f ./kaodv.ko ]; then \
-		install -m 644 kaodv.ko /lib/modules/$(KERNEL)/aodv/kaodv.ko; \
-	else \
-		install -m 644 kaodv.o /lib/modules/$(KERNEL)/aodv/kaodv.o; \
-	fi
-	/sbin/depmod -a
-uninstall:
-	rm -f /usr/sbin/aodvd
-	rm -rf /lib/modules/$(KERNEL)/aodv
-
 docs:
 	cd docs && $(MAKE) all
 clean: 
-	rm -f aodvd *~ *.o core *.log $(NS_TARGET) kaodv.ko endian endian.h $(NS_DIR)/*.o $(NS_DIR)/*~
+	rm -f aodvd *~ *.o core *.log kaodv.ko endian endian.h
 	cd lnx && $(MAKE) clean
-#cd docs && $(MAKE) clean
+	cd docs && $(MAKE) clean
 
 # DO NOT DELETE
 
