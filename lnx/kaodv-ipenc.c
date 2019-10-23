@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Authors: Erik Nordström, <erik.nordstrom@it.uu.se>
+ * Authors: Erik Nordstrï¿½m, <erik.nordstrom@it.uu.se>
  *
  *****************************************************************************/
 #include <net/ip.h>
@@ -104,7 +104,7 @@ struct sk_buff *ip_pkt_encapsulate(struct sk_buff *skb, __u32 dest)
     ip_send_check(iph);
 
     if (iph->id == 0)
-	    ip_select_ident(iph, skb_dst(skb), NULL);
+	    ip_select_ident(&init_net, skb, NULL);
         
     return skb;
 }
