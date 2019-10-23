@@ -338,11 +338,8 @@ static int kaodv_expl_print(char *buf)
 // NOTE: 不确定正确性
 static ssize_t kaodv_expl_proc_info(struct file* p_file, char* p_buf, size_t p_count, loff_t* p_offset)
 {
-	int len;
-
-	len = kaodv_expl_print(p_buf);
-
-	return len;
+	kaodv_expl_print(p_buf);
+	return 0;
 }
 
 int kaodv_expl_update(__u32 daddr, __u32 nhop, unsigned long time,

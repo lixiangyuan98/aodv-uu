@@ -275,18 +275,10 @@ static struct nf_hook_ops kaodv_ops[] = {
 
 // NOTE: 不确定正确性
 static ssize_t kaodv_read_proc(struct file* p_file, char* p_buf, size_t p_count, loff_t* p_offset) {
-	int len;
-
-	len = sprintf(p_buf,
-				  "qual threshold=%d\npkts dropped=%lu\nlast qual=%d\ngateway_mode=%d\n",
-				  qual_th, pkts_dropped, qual, is_gateway);
-	// p_file->f_pos = p_buf + *p_offset;
-	// len -= *p_offset;
-	// if (len > p_count)
-	// 	len = p_count;
-	// else if (len < 0)
-	// 	len = 0;
-	return len;
+	sprintf(p_buf,
+		"qual threshold=%d\npkts dropped=%lu\nlast qual=%d\ngateway_mode=%d\n",
+		qual_th, pkts_dropped, qual, is_gateway);
+	return 0;
 }
 
 // static int kaodv_read_proc(char *buff, char **start, off_t off, int count,

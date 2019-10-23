@@ -284,23 +284,14 @@ int kaodv_queue_set_verdict(int verdict, __u32 daddr)
 // NOTE: 不确定正确性
 static ssize_t kaodv_queue_get_info(struct file* p_file, char* p_buf, size_t p_count, loff_t* p_offset)
 {
-	int len;
 
 	read_lock_bh(&queue_lock);
-
-	len = sprintf(p_buf,
-		      "Queue length      : %u\n"
-		      "Queue max. length : %u\n", queue_total, queue_maxlen);
+	sprintf(p_buf,
+		"Queue length      : %u\n"
+		"Queue max. length : %u\n", queue_total, queue_maxlen);
 
 	read_unlock_bh(&queue_lock);
-
-	// p_file->f_pos = p_buf + *p_offset;
-	// len -= *p_offset;
-	// if (len > p_count)
-	// 	len = p_count;
-	// else if (len < 0)
-	// 	len = 0;
-	return len;
+	return 0;
 }
 
 static const struct file_operations kaodv_proc_fops = {
