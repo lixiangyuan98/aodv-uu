@@ -5,14 +5,18 @@ kaodv-objs := kaodv-mod.o kaodv-debug.o kaodv-netlink.o kaodv-queue.o kaodv-ipen
 else
 KERNEL_DIR=/root/flexbuild/build/rfs/rootfs_ubuntu_bionic_arm64/lib/modules/4.14.47/build
 
-.PHONY: clean indent all
+.PHONY: clean indent all arm
 
 all:
+	$(MAKE) -C $(KERNEL_DIR) M=$(shell pwd) modules
+	cp kaodv.ko ../
+
+arm:
 	$(MAKE) ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -C $(KERNEL_DIR) M=$(shell pwd) modules
 	cp kaodv.ko ../
 
 clean:
-	$(MAKE) ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -C $(KERNEL_DIR) M=$(shell pwd) clean
+	$(MAKE) -C $(KERNEL_DIR) M=$(shell pwd) clean
 	rm -rf *.o *~
 
 TAGS:

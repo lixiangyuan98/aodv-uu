@@ -19,7 +19,7 @@
  * Author: Erik Nordström, <erik.nordstrom@it.uu.se>
  *
  *****************************************************************************/
-#include <asm/uaccess.h>
+#include <asm/uaccess.h> // comment this on Ubuntu to fix compile error
 #include <asm/io.h>
 
 #include "kaodv-debug.h"

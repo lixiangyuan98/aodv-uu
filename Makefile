@@ -6,14 +6,17 @@ SRC =	main.c list.c debug.c timer_queue.c aodv_socket.c aodv_hello.c \
 	aodv_rreq.c aodv_rrep.c aodv_rerr.c nl.c
 
 OBJS = $(SRC:%.c=%.o)
+ARM-OBJS = $(SRC:%.c=%-arm.o)
 
 # Compiler and options:
 # ##### for RCP use: big-endian
+CC=gcc
+LD=ld
 ARM_CC=aarch64-linux-gnu-gcc
 ARM_LD=aarch64-linux-gnu-ld
 OPTS=-Wall -O3 -fgnu89-inline
 
-export CC ARM_CC MIPS_CC
+export CC ARM_CC
 
 # Comment out to disable debug operation...
 DEBUG=-g -DDEBUG
@@ -40,19 +43,30 @@ ARM_INC=
 AR=ar
 AR_FLAGS=rc
 
-.PHONY: default clean install uninstall depend tags aodvd-arm docs kaodv kaodv-arm kaodv-mips
+.PHONY: default clean install uninstall depend tags aodvd aodvd-arm docs kaodv kaodv-arm arm
 
 default: aodvd kaodv
 
+arm: aodvd-arm kaodv-arm
+
 $(OBJS): %.o: %.c Makefile
-	$(ARM_CC) $(ARM_CCFLAGS) $(CFLAGS) -DARM $(ARM_INC) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(ARM-OBJS): %-arm.o: %.c Makefile
+	$(ARM_CC) $(CFLAGS) -DARM $(ARM_INC) -c -o $@ $<
 
 aodvd: $(OBJS) Makefile
-	$(ARM_CC) $(ARM_CCFLAGS) $(CFLAGS) -DARM -o $@ $(OBJS) $(LD_OPTS)
+	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LD_OPTS)
+
+aodvd-arm: $(ARM-OBJS) Makefile
+	$(ARM_CC) $(CFLAGS) -DARM $(ARM_INC) -o $@ $(ARM-OBJS) $(LD_OPTS)
 
 # Kernel module:
 kaodv: 
 	$(MAKE) -C $(AODVDIR)/lnx XDEFS=$(XDEFS)
+
+kaodv-arm: 
+	$(MAKE) -C $(AODVDIR)/lnx XDEFS=$(XDEFS) arm
 
 tags: TAGS
 TAGS: lnx/TAGS
@@ -73,7 +87,7 @@ depend:
 docs:
 	cd docs && $(MAKE) all
 clean: 
-	rm -f aodvd *~ *.o core *.log kaodv.ko endian endian.h
+	rm -f aodvd aodvd-arm *~ *.o core *.log kaodv.ko endian endian.h
 	cd lnx && $(MAKE) clean
 	cd docs && $(MAKE) clean
 
